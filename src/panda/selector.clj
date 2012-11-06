@@ -1,5 +1,5 @@
 (ns panda.selector
-  "Implementations for the selector and finder protocols.")
+  "## Implementations for the selector and finder protocols.")
 
 (declare selector)
 
@@ -16,10 +16,10 @@ the given tree.
 
 A pattern that is a function is considered a finder.
 
-Sequential patterns generate a finder finds the head of the pattern,
-with the value narrowed by `(selector rest-of-the-pattern)`.
+Sequential patterns generate a finder that finds the head of the pattern,
+where the last entry of the pattern may be a tree.
 
-See also `panda.core/find-branch` and `panda.core/get-branch`"))
+See also `panda.core/find-branch` and `panda.core/get-branch`."))
 
 (extend-protocol TreeFinderPattern
   clojure.lang.Fn
@@ -33,13 +33,13 @@ See also `panda.core/find-branch` and `panda.core/get-branch`"))
 
   clojure.lang.Sequential
   (finder [[head & rest]]
-    (let [find-head (finder head)]
-      (if rest
-        (let [select-rest (selector rest)]
+    (if rest
+        (let [find-head (finder head)
+              find-rest (finder rest)]
           (fn [tree]
             (if-let [entry (find-head tree)]
-              (assoc entry 1 (select-rest (val entry))))))
-        find-head))))
+              (assoc entry 1 (find-rest (val entry))))))
+        (selector head)))) ; last element may match a tree
 
 (defprotocol TreeSelectorPattern
   "A pattern that can be used to construct a selector. A selector will select a subtree from a tree."
@@ -57,6 +57,10 @@ A pattern that is a function is considered a selector.
 A pattern that is a set will match the branches of the tree that mach
 the patterns in the set, based on `(finder item)` for each item in the
 set.
+
+  Ex. ((selector #{:branch1
+                   [:branch2 :level2 :level3 #{:leaf1 :leaf2}]
+                   [:branch3 #{:leaf-a :leaf-b}]}) tree)
 
 See also `panda.core/select-tree`"))
 
